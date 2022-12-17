@@ -1,0 +1,1 @@
+adev runserver .\main.py livereload --app-factory=app - запуск сервера с помощью aiohttp-devtools

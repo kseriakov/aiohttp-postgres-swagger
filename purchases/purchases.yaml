@@ -1,0 +1,177 @@
+openapi: "3.0.0"
+info:
+    version: 1.0.0
+    title: Swagger Purchase
+    license:
+        name: MIT
+paths:
+    /purchases/search:
+        get:
+            summary: Search purchases
+            tags:
+                - purchases
+            parameters:
+                - in: query
+                  name: start_date
+                  schema:
+                      type: string
+                      format: date
+                  description: Date for start searching
+                  required: false
+                - in: query
+                  name: end_date
+                  schema:
+                      type: string
+                      format: date
+                  description: Date for end searching
+                  required: false
+            responses:
+                "200":
+                    description: An array of purchases
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PurchasesList"
+    /purchases:
+        get:
+            summary: List all purchases
+            tags:
+                - purchases
+            responses:
+                "200":
+                    description: An array of purchases
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PurchasesList"
+        post:
+            summary: Create a purchase
+            tags:
+                - purchases
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                price:
+                                    type: string
+                                amount:
+                                    type: integer
+                                    format: int32
+            responses:
+                "201":
+                    description: new purchase
+                    content:
+                        application/json:
+                            schema:
+                                type: integer
+                                format: int32
+    /purchases/{id}:
+        get:
+            summary: Info for a specific purchase
+            tags:
+                - purchases
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: The id of the purchase to retrieve
+                  schema:
+                      type: integer
+                      format: int32
+            responses:
+                "200":
+                    description: Expected response to a valid request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PurchaseShow"
+                            examples:
+                                apple:
+                                    summary: An example of a apple
+                                    value:
+                                        id: 1
+                                        name: Apple
+                                        price: 123.32
+                                        date: 2022-12-17T03:18:41.193Z
+        patch:
+            summary: Update specific purchase
+            tags:
+                - purchases
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: The id of the purchase to update
+                  schema:
+                      type: integer
+                      format: int32
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                price:
+                                    type: string
+                                amount:
+                                    type: integer
+                                    format: int32
+            responses:
+                "200":
+                    description: new purchase
+                    content:
+                        application/json:
+                            schema:
+                                type: integer
+                                format: int32
+        delete:
+            summary: Deletes specific purchase
+            tags:
+                - purchases
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: The id of the purchases to delete
+                  schema:
+                      type: integer
+                      format: int32
+            responses:
+                "204":
+                    description: Null response
+components:
+    schemas:
+        PurchaseShow:
+            type: object
+            required:
+                - id
+                - name
+                - price
+                - date
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                name:
+                    type: string
+                price:
+                    type: number
+                    format: double
+                date:
+                    type: string
+                    format: date-time
+        PurchasesList:
+            type: object
+            properties:
+                purchases:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/PurchaseShow"
