@@ -31,7 +31,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/PurchasesList"
+                                $ref: "#/components/schemas/PurchasesSearch"
     /purchases:
         get:
             summary: List all purchases
@@ -175,3 +175,13 @@ components:
                     type: array
                     items:
                         $ref: "#/components/schemas/PurchaseShow"
+        PurchasesSearch:
+            type: object
+            properties:
+                purchases:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/PurchaseShow"
+                expenses:
+                    type: number
+                    format: int32

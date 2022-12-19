@@ -60,9 +60,7 @@ async def get_one(request: Request) -> Response:
             text=f"Purchase with id = {id} does not exists",
         )
 
-    return Response(
-        body=PurchaseShow(**data).json(), content_type="application/json"
-    )
+    return Response(body=PurchaseShow(**data).json(), content_type="application/json")
 
 
 @router.post("/purchases")
@@ -77,7 +75,13 @@ async def create(request: Request) -> Response:
 async def update(request: Request) -> Response:
     id = get_id_from_request(request)
     data = await request.json()
-    await service.update_purchase(id, PurchaseUpdate(**data))
+    updated = await service.update_purchase(id, PurchaseUpdate(**data))
+
+    if not updated:
+        raise HTTPNotFound(
+            text=f"Purchase with id = {id} does not exists",
+        )
+
     return Response(status=HTTPOk.status_code)
 
 
