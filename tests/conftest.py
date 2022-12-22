@@ -2,8 +2,8 @@ import asyncio
 from typing import Callable, Type
 import pytest_asyncio, pytest
 from pytest_factoryboy import register
-from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy import select, delete, text
 
 from tests.db.db_test_connection import DB_URL, metadata_test, engine
 from tests.factory import Purchase
@@ -59,17 +59,18 @@ async def connection_one_trans(connection):
 
 @pytest_asyncio.fixture
 async def insert_purchases(
-    purchase: Type[Purchase], connection_one_trans
-) -> Callable[[int], list[Purchase]]:
+    connection, purchase: Type[Purchase]
+) -> Callable[[int, AsyncConnection], None]:
     """
     Фикстура для добавления произвольного числа объектов
     """
 
-    async def inner(count: int) -> list[Purchase]:
-        conn, trans = connection_one_trans
+    async def inner(
+        count: int,
+    ) -> None:
         list_data = purchase.build_batch(size=count)
         query = purchase_table.insert().values([i.dict() for i in list_data])
-        await conn.execute(query)
-        await trans.commit()
+        await connection.execute(query)
+        await connection.commit()
 
     return inner

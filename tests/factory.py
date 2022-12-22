@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any
 import factory
 from faker import Faker
@@ -26,9 +25,7 @@ class PurchaseTestBase:
 
 class Purchase(factory.Factory):
     name = factory.LazyFunction(lambda: fake.word())
-    price = factory.LazyFunction(
-        lambda: fake.pydecimal(left_digits=3, right_digits=2, positive=True)
-    )
+    price = factory.LazyFunction(lambda: fake.pydecimal(left_digits=3, right_digits=2, positive=True))
     amount = factory.LazyFunction(lambda: fake.pyint(min_value=1, max_value=10))
 
     class Meta:

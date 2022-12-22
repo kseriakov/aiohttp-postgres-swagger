@@ -1,7 +1,7 @@
 from datetime import date
 from functools import wraps
 import inspect
-from typing import Callable
+from typing import Callable, ParamSpec, TypeVar
 from aiohttp.web_exceptions import HTTPBadRequest
 from aiohttp.web_request import Request
 from pydantic import BaseModel
@@ -41,15 +41,23 @@ def get_dict_not_none_values(data: dict) -> dict:
     return {k: v for k, v in data.items() if v is not None}
 
 
-def checkout_dates(func: Callable) -> Callable:
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def checkout_dates(func: Callable[P, R]) -> Callable[P, R]:
     """
     Проверяет даты на наличие None, строит условия для WHERE
+    В декорируемых функциях даты передаются только как позиционные аргументы
     """
 
     @wraps(func)
-    async def inner(start_date: date | None, end_date: date | None):
-        query_start = purchase_table.c.date >= start_date if start_date else True
-        query_end = purchase_table.c.date <= end_date if end_date else True
-        return await func(query_start, query_end)
+    async def inner(*args: P.args, **kwargs: P.kwargs) -> R:
+        start_date = kwargs["start_date"]
+        end_date = kwargs["end_date"]
+
+        start_date = purchase_table.c.date >= start_date if start_date else True
+        end_date = purchase_table.c.date <= end_date if end_date else True
+        return await func(*args, start_date=start_date, end_date=end_date)
 
     return inner

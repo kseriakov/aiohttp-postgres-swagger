@@ -51,16 +51,12 @@ class PurchaseSearch(BaseModel):
     def __init__(self, **data):
         super().__init__(**data)
 
-        field_values_not_none = reduce(
-            lambda x, y: x or y, self.dict().values()
-        )
+        field_values_not_none = reduce(lambda x, y: x or y, self.dict().values())
 
         if not field_values_not_none:
             raise ValidationError(
                 errors=[
-                    ErrorWrapper(
-                        ValueError("Both field values is None"), loc=None
-                    )
+                    ErrorWrapper(ValueError("Both field values is None"), loc=None)
                 ],
                 model=self.__class__,
             )
