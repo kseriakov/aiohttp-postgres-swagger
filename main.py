@@ -1,12 +1,12 @@
 from typing import Iterable
 from aiohttp import web
 from aiohttp.web_routedef import AbstractRouteDef
-from databases import Database
 from aiohttp_swagger3 import SwaggerFile, SwaggerUiSettings
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from db.db_connection import engine
 from settings import settings
-from purchases.routes import router as purchase
+from purchases.main import purchase_routes
 
 
 class App:
@@ -15,8 +15,8 @@ class App:
     Внедрение Swagger.
     """
 
-    def __init__(self, db: Database, routes: Iterable[AbstractRouteDef]):
-        self._db = db
+    def __init__(self, engine: AsyncEngine, routes: Iterable[AbstractRouteDef]):
+        self._engine = engine
         self._app = web.Application()
         # self._app.router.add_routes(routes)
         self.setup_swagger(routes)
@@ -28,10 +28,10 @@ class App:
         web.run_app(self._app, host=host, port=port)
 
     async def start_connection(self, app):
-        await self._db.connect()
+        await self._engine.connect()
 
     async def close_connection(self, app):
-        await self._db.disconnect()
+        await self._engine.disconnect()
 
     def setup_swagger(self, routes: Iterable[AbstractRouteDef]):
         swagger = SwaggerFile(
@@ -42,5 +42,5 @@ class App:
         swagger.add_routes(routes)
 
 
-app = App(db=engine, routes=purchase)
+app = App(engine=engine, routes=purchase_routes)
 app()

@@ -10,7 +10,12 @@ class PurchaseTestBase:
     Базовый класс представления
     """
 
-    def __init__(self, name: str, price: str, amount: int):
+    def __init__(
+        self,
+        name: str | None = None,
+        price: str | None = None,
+        amount: int | None = None,
+    ):
         self.name = name
         self.price = price
         self.amount = amount
@@ -25,7 +30,9 @@ class PurchaseTestBase:
 
 class Purchase(factory.Factory):
     name = factory.LazyFunction(lambda: fake.word())
-    price = factory.LazyFunction(lambda: fake.pydecimal(left_digits=3, right_digits=2, positive=True))
+    price = factory.LazyFunction(
+        lambda: fake.pydecimal(left_digits=3, right_digits=2, positive=True)
+    )
     amount = factory.LazyFunction(lambda: fake.pyint(min_value=1, max_value=10))
 
     class Meta:

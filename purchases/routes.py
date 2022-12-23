@@ -1,5 +1,4 @@
 from aiohttp.web import (
-    RouteTableDef,
     json_response,
     Response,
     HTTPNotFound,
@@ -11,8 +10,6 @@ from aiohttp.web import (
 from aiohttp.web_request import Request
 from pydantic import ValidationError
 
-from db.db_connection import engine
-from .models import purchase_table
 from .utils import get_id_from_request
 from .service import Service
 from .schemas import (
@@ -25,77 +22,78 @@ from .schemas import (
 )
 
 
-router = RouteTableDef()
+class PurchaseRouter:
+    """
+    Класс обработчиков запросов
+    Реализован для возможности подключения к тестовой БД через service_db
+    """
 
-service = Service(engine=engine, table_obj=purchase_table)
+    def __init__(self, service_db: Service):
+        self.service_db = service_db
 
+    # @router.get("/purchases/search")
+    async def search_purchases(self, request: Request) -> Response:
+        try:
+            search_params = PurchaseSearch(**request.query)
+        except ValidationError as err:
+            raise HTTPBadRequest(text=err.errors()[0]["msg"])
 
-@router.get("/purchases/search")
-async def search_purchases(request: Request) -> Response:
-    try:
-        search_params = PurchaseSearch(**request.query)
-    except ValidationError as err:
-        raise HTTPBadRequest(text=err.errors()[0]["msg"])
-
-    data = await service.search(**search_params.dict())
-    expenses = await service.get_expenses(**search_params.dict())
-    return Response(
-        body=PurchaseSearchList(purchases=data, expenses=expenses).json(),
-        content_type="application/json",
-    )
-
-
-@router.get("/purchases")
-async def get_all(request: Request) -> Response:
-    data = await service.fetch_all()
-    return Response(
-        body=PurchaseList(purchases=data).json(),
-        content_type="application/json",
-    )
-
-
-@router.get("/purchases/{id}")
-async def get_one(request: Request) -> Response:
-    id = get_id_from_request(request)
-    data = await service.fetch_one(id)
-
-    if not data:
-        raise HTTPNotFound(
-            text=f"Purchase with id = {id} does not exists",
+        data = await self.service_db.search(**search_params.dict())
+        expenses = await self.service_db.get_expenses(**search_params.dict())
+        return Response(
+            body=PurchaseSearchList(purchases=data, expenses=expenses).json(),
+            content_type="application/json",
         )
 
-    return Response(body=PurchaseShow(**data).json(), content_type="application/json")
-
-
-@router.post("/purchases")
-async def create(request: Request) -> Response:
-    data = await request.json()
-    purchase_schema = PurchaseCreate(**data)
-    purchase_id = await service.create_one(purchase_schema)
-    return json_response(purchase_id, status=HTTPCreated.status_code)
-
-
-@router.patch("/purchases/{id}")
-async def update(request: Request) -> Response:
-    id = get_id_from_request(request)
-    data = await request.json()
-    updated = await service.update_one(id, PurchaseUpdate(**data))
-
-    if not updated:
-        raise HTTPNotFound(
-            text=f"Purchase with id = {id} does not exists",
+    # @router.get("/purchases")
+    async def get_all(self, request: Request) -> Response:
+        data = await self.service_db.fetch_all()
+        return Response(
+            body=PurchaseList(purchases=data).json(),
+            content_type="application/json",
         )
 
-    return Response(status=HTTPOk.status_code)
+    # @router.get("/purchases/{id}")
+    async def get_one(self, request: Request) -> Response:
+        id = get_id_from_request(request)
+        data = await self.service_db.fetch_one(id)
 
+        if not data:
+            raise HTTPNotFound(
+                text=f"Purchase with id = {id} does not exists",
+            )
 
-@router.delete("/purchases/{id}")
-async def delete(request: Request) -> Response:
-    id = get_id_from_request(request)
-    deleted = await service.delete_one(id)
-    if not deleted:
-        raise HTTPNotFound(
-            text=f"Purchase with id = {id} does not exists",
+        return Response(
+            body=PurchaseShow(**data).json(), content_type="application/json"
         )
 
-    return Response(status=HTTPNoContent.status_code)
+    # @router.post("/purchases")
+    async def create(self, request: Request) -> Response:
+        data = await request.json()
+        purchase_schema = PurchaseCreate(**data)
+        purchase_id = await self.service_db.create_one(purchase_schema)
+        return json_response(purchase_id, status=HTTPCreated.status_code)
+
+    # @router.patch("/purchases/{id}")
+    async def update(self, request: Request) -> Response:
+        id = get_id_from_request(request)
+        data = await request.json()
+        updated = await self.service_db.update_one(id=id, data=PurchaseUpdate(**data))
+
+        if not updated:
+            raise HTTPNotFound(
+                text=f"Purchase with id = {id} does not exists",
+            )
+
+        return Response(status=HTTPOk.status_code)
+
+    # @router.delete("/purchases/{id}")
+    async def delete(self, request: Request) -> Response:
+        id = get_id_from_request(request)
+        deleted = await self.service_db.delete_one(id=id)
+        if not deleted:
+            raise HTTPNotFound(
+                text=f"Purchase with id = {id} does not exists",
+            )
+
+        return Response(status=HTTPNoContent.status_code)

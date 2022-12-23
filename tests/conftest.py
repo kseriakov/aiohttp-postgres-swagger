@@ -3,11 +3,13 @@ from typing import Callable, Type
 import pytest_asyncio, pytest
 from pytest_factoryboy import register
 from sqlalchemy.ext.asyncio import AsyncConnection
-from sqlalchemy import select, delete, text
+from aiohttp import web
 
-from tests.db.db_test_connection import DB_URL, metadata_test, engine
+from tests.db.db_test_connection import metadata_test, engine
 from tests.factory import Purchase
 from purchases.models import purchase_table
+from tests.routes.purchases import purchase_routes
+
 
 register(Purchase)
 
@@ -23,10 +25,10 @@ def event_loop():
     loop.close()
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="module")
 async def connection():
     """
-    Фикстура предоставляет единый экземпляр соединения с БД в рамках всей сессии
+    Фикстура предоставляет единый экземпляр соединения с БД для тестов в рамках одного модуля
     В начале создаем тестовую таблицу, в конце - удаляем
     """
     async with engine.begin() as conn:
@@ -62,7 +64,7 @@ async def insert_purchases(
     connection, purchase: Type[Purchase]
 ) -> Callable[[int, AsyncConnection], None]:
     """
-    Фикстура для добавления произвольного числа объектов
+    Фикстура для добавления произвольного числа объектов в БД
     """
 
     async def inner(
@@ -74,3 +76,22 @@ async def insert_purchases(
         await connection.commit()
 
     return inner
+
+
+@pytest.fixture(scope="session")
+def get_app():
+    """
+    Инициализация приложения
+    """
+    app = web.Application()
+    app.router.add_routes(purchase_routes)
+    return app
+
+
+@pytest.fixture
+def client(event_loop, aiohttp_client, get_app):
+    """
+    Клиент для отправки HTTP запросов
+    """
+
+    return event_loop.run_until_complete(aiohttp_client(get_app))

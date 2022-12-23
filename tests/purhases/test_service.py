@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from typing import Type
 import pytest
 from sqlalchemy.ext.asyncio import AsyncConnection
